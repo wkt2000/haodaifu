@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import re
 import sys
 
 __author__ = 'rujia'
 import scrapy
+
 
 from ..items import WenmanItem
 if sys.getdefaultencoding() != 'utf-8':
@@ -16,11 +18,11 @@ class Ask39Spider(scrapy.Spider):
     def parse(self, response):
 
         diqu_url = response.xpath("//div[@class='kstl']//a/@href").extract()
-        print 'diqu_url:',diqu_url
-        beijin =response.xpath("//div[@class='kstl2']//a/@href").extract()
-        diqu_url_all =diqu_url.extend(beijin)
-        print diqu_url_all
-        for each_zore in diqu_url_all:
+        # print('diqu_url:',diqu_url)
+        # beijin =response.xpath("//div[@class='kstl2']//a/@href").extract()
+        # diqu_url_all =diqu_url.extend(beijin)
+
+        for each_zore in diqu_url:
             req = scrapy.Request(each_zore, callback=self.parse_question)
             yield req
 
@@ -29,11 +31,15 @@ class Ask39Spider(scrapy.Spider):
     def parse_question(self, response):
         hospital_url = response.xpath("//div[@class='m_ctt_green']//li//a/@href").extract()
         for each in hospital_url:
-            req = scrapy.Request(each, callback=self.parse_next)
+
+            url = 'http://www.haodf.com' + each
+            # print('hospital_url:', url)
+            req = scrapy.Request(url, callback=self.parse_next)
             yield req
 
     def parse_next(self,response):
         hospital_name = response.xpath("//div[@class='hospital-detail']//h1/text()").extract()[0]
+        # print('hospital_name:',hospital_name)
         leval_type = response.xpath("//div[@class='hospital-detail']//span[@class='hospital-label-item']//text()").extract()
         if len(leval_type) <2:
             hospital_level = ''
@@ -45,6 +51,7 @@ class Ask39Spider(scrapy.Spider):
 
         hospital_site = response.xpath("//div[@class='h-d-content']//a/@href").extract()
         hospital_detail = {'hospital_name':hospital_name,'hospital_level':hospital_level,'hospital_type':hospital_type,'hospital_site':hospital_site}
+        # print('hospital_site[0]:',hospital_site[0])
         req = scrapy.Request(hospital_site[0], callback=self.parse_nex)
         req.meta['hospital_detail'] = hospital_detail
         yield req
@@ -53,18 +60,26 @@ class Ask39Spider(scrapy.Spider):
         hospital_intro = ''.join(response.xpath("//table[@class='czsj']//tr//text()").extract())
         hospital_detail = response.meta['hospital_detail']
         hospital_detail['hospital_intro'] = hospital_intro
+        # print('hospital_site[1]',hospital_detail['hospital_site'][1])
         req = scrapy.Request(hospital_detail['hospital_site'][1], callback=self.parse_ne)
         req.meta['hospital_detail'] = hospital_detail
         yield req
 
     def parse_ne(self,response):
-        hospital_phone = response.xpath('//*[@id="gray"]/div[5]/table[2]/tbody/tr/td/table/tbody/tr/td[1]/table/tbody/tr[3]/td[2]/table/tbody/tr[1]/td[2]').extract()
-        hospital_address = response.xpath('//*[@id="gray"]/div[5]/table[2]/tbody/tr/td/table/tbody/tr/td[1]/table/tbody/tr[3]/td[2]/table/tbody/tr[2]/td[2]').extract()
+        hospital_phone = response.xpath('//td[@width="85%"]//text()').extract()[0]
+        address_td = response.xpath("//td[@valign='top']").extract()[4]
+
+        if address_td:
+            dr = re.compile(r'<[^>]+>', re.S)
+            hospital_address =dr.sub('',address_td)
         hospital_detail = response.meta['hospital_detail']
         hospital_intro = hospital_detail['hospital_intro']
         hospital_level = hospital_detail['hospital_level']
         hospital_name = hospital_detail['hospital_name']
         hospital_type = hospital_detail['hospital_type']
+        print('hospital_phone',hospital_phone)
+        print('hospital_address', hospital_address)
+        print('hospital_name',hospital_name)
         this_item = WenmanItem()
         this_item['hospital_phone'] = hospital_phone
         this_item['hospital_address'] = hospital_address
@@ -72,6 +87,7 @@ class Ask39Spider(scrapy.Spider):
         this_item['hospital_level'] = hospital_level
         this_item['hospital_name'] = hospital_name
         this_item['hospital_type'] = hospital_type
+
         yield this_item
 
 
