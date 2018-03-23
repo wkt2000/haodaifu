@@ -19,7 +19,7 @@ class Ask39Spider(scrapy.Spider):
 
         diqu_url = response.xpath("//div[@class='kstl']//a/@href").extract()
         # print('diqu_url:',diqu_url)
-        # beijin =response.xpath("//div[@class='kstl2']//a/@href").extract()
+        # diqu_url =response.xpath("//div[@class='kstl2']//a/@href").extract()
         # diqu_url_all =diqu_url.extend(beijin)
 
         for each_zore in diqu_url:
@@ -59,7 +59,7 @@ class Ask39Spider(scrapy.Spider):
     def parse_nex(self,response):
         hospital_intro = ''.join(response.xpath("//table[@class='czsj']//tr//text()").extract())
         hospital_detail = response.meta['hospital_detail']
-        hospital_detail['hospital_intro'] = hospital_intro
+        hospital_detail['hospital_intro'] = hospital_intro.replace('\n','').replace('\t','').replace('\u3000','  ')
         # print('hospital_site[1]',hospital_detail['hospital_site'][1])
         req = scrapy.Request(hospital_detail['hospital_site'][1], callback=self.parse_ne)
         req.meta['hospital_detail'] = hospital_detail
