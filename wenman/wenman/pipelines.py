@@ -37,12 +37,17 @@ class WenmanPipeline(object):
                      'hospital_type': item['hospital_type']
 
                      }
+        test_txt = item['hospital_name'] + '|+|' + item['hospital_type'] +'|+|' \
+         +item['hospital_level']+'|+|' +item['hospital_address']+"|+|"+ item['hospital_phone']  \
+            + '|+|' +item['hospital_intro']+ '\n'
+
 
         file_path = os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'file'),
-                                 'hospital.json')
+                                 'hospital.txt')
 
         fp = open(file_path, 'a')
-        fp.write(json.dumps(test_dict) + '\n')
+        # fp.write(json.dumps(test_dict) + '\n')
+        fp.write(test_txt)
         fp.close()
         global  num
         num += 1
